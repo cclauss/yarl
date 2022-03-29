@@ -767,6 +767,101 @@ def test_div_with_dots():
     assert url.raw_path == "/path/to"
 
 
+# joinpath
+
+
+def test_joinpath_root():
+    url = URL("http://example.com")
+    assert str(url.joinpath("path", "to")) == "http://example.com/path/to"
+
+
+def test_joinpath_root_with_slash():
+    url = URL("http://example.com/")
+    assert str(url.joinpath("path", "to")) == "http://example.com/path/to"
+
+
+def test_joinpath():
+    url = URL("http://example.com/path")
+    assert str(url.joinpath("to")) == "http://example.com/path/to"
+
+
+def test_joinpath_with_slash():
+    url = URL("http://example.com/path/")
+    assert str(url.joinpath("to")) == "http://example.com/path/to"
+
+
+def test_joinpath_path_starting_from_slash_is_forbidden():
+    url = URL("http://example.com/path/")
+    with pytest.raises(ValueError):
+        assert url.joinpath("/to/others")
+
+
+def test_joinpath_cleanup_query_and_fragment():
+    url = URL("http://example.com/path?a=1#frag")
+    assert str(url.joinpath("to")) == "http://example.com/path/to"
+
+
+def test_joinpath_for_empty_url():
+    url = URL().joinpath("a")
+    assert url.raw_parts == ("a",)
+
+
+def test_joinpath_for_relative_url():
+    url = URL("a").joinpath("b")
+    assert url.raw_parts == ("a", "b")
+
+
+def test_joinpath_with_empty_element():
+    url = URL("a").joinpath("b", "", "c")
+    assert url.raw_parts == ("a", "b", "c")
+
+
+def test_joinpath_for_relative_url_started_with_slash():
+    url = URL("/a").joinpath("b")
+    assert url.raw_parts == ("/", "a", "b")
+
+
+def test_joinpath_non_ascii():
+    url = URL("http://example.com/сюда")
+    url2 = url.joinpath("туда")
+    assert url2.path == "/сюда/туда"
+    assert url2.raw_path == "/%D1%81%D1%8E%D0%B4%D0%B0/%D1%82%D1%83%D0%B4%D0%B0"
+    assert url2.parts == ("/", "сюда", "туда")
+    assert url2.raw_parts == (
+        "/",
+        "%D1%81%D1%8E%D0%B4%D0%B0",
+        "%D1%82%D1%83%D0%B4%D0%B0",
+    )
+
+
+def test_joinpath_percent_encoded():
+    url = URL("http://example.com/path")
+    url2 = url.joinpath("%cf%80")
+    assert url2.path == "/path/%cf%80"
+    assert url2.raw_path == "/path/%25cf%2580"
+    assert url2.parts == ("/", "path", "%cf%80")
+    assert url2.raw_parts == ("/", "path", "%25cf%2580")
+
+
+def test_joinpath_encoded_percent_encoded():
+    url = URL("http://example.com/path")
+    url2 = url.joinpath("%cf%80", encoded=True)
+    assert url2.path == "/path/π"
+    assert url2.raw_path == "/path/%cf%80"
+    assert url2.parts == ("/", "path", "π")
+    assert url2.raw_parts == ("/", "path", "%cf%80")
+
+
+def test_joinpath_with_colon_and_at():
+    url = URL("http://example.com/base").joinpath("path:abc@123")
+    assert url.raw_path == "/base/path:abc@123"
+
+
+def test_joinpath_with_dots():
+    url = URL("http://example.com/base").joinpath("..", "path", ".", "to")
+    assert url.raw_path == "/path/to"
+
+
 # with_path
 
 
